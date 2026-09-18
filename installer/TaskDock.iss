@@ -1,5 +1,5 @@
 #define MyAppName "TaskDock"
-#define MyAppVersion "0.1.2"
+#define MyAppVersion "0.1.3"
 #define MyAppPublisher "TaskDock"
 #define MyAppExeName "TaskDock.exe"
 
@@ -31,7 +31,7 @@ Name: "chinesesimp"; MessagesFile: "ChineseSimplified.isl"
 Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加快捷方式："; Flags: unchecked
 
 [Files]
-Source: "..\artifacts\portable\TaskDock-0.1.2\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "portable.flag"
+Source: "..\artifacts\portable\TaskDock-0.1.3\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "portable.flag"
 
 [Icons]
 Name: "{group}\TaskDock"; Filename: "{app}\{#MyAppExeName}"

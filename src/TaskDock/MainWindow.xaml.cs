@@ -157,6 +157,18 @@ public partial class MainWindow : Window
         if (e.Key == Key.Enter && ViewModel.AddQuickCommand.CanExecute(null)) { ViewModel.AddQuickCommand.Execute(null); e.Handled = true; }
     }
 
+    private void QuickAddButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.AddQuickCommand.CanExecute(null))
+        {
+            QuickInputBox.Focus();
+            ViewModel.ToastMessage = "请先输入任务内容";
+            return;
+        }
+
+        ViewModel.AddQuickCommand.Execute(null);
+    }
+
     private void NewTaskButton_Click(object sender, RoutedEventArgs e)
     {
         var editor = new TaskEditorWindow(new TaskItem()) { Owner = this };

@@ -19,8 +19,8 @@ TaskDock 不需要账号，不连接云服务，不检查更新，也不发送�
 
 ## 获取与运行
 
-- 安装版：运行 `TaskDock-Setup-0.1.2-win-x64.exe`
-- 便携版：解压 `TaskDock-Portable-0.1.2-win-x64.zip` 后运行 `TaskDock.exe`
+- 安装版：运行 `TaskDock-Setup-0.1.3-win-x64.exe`
+- 便携版：解压 `TaskDock-Portable-0.1.3-win-x64.zip` 后运行 `TaskDock.exe`
 
 安装版的数据位于 `%LOCALAPPDATA%\TaskDock`。便携版的数据位于程序目录下的 `Data` 文件夹。
 
