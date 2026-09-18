@@ -25,6 +25,7 @@ public sealed class TaskItem : ObservableObject
     private string _recurrenceRule = string.Empty;
     private string _link = string.Empty;
     private string _attachmentPath = string.Empty;
+    private List<SubtaskItem> _subtasks = [];
     private int _actualSeconds;
     private DateTime? _activeTimerStart;
 
@@ -40,7 +41,16 @@ public sealed class TaskItem : ObservableObject
     public string RecurrenceRule { get => _recurrenceRule; set => SetProperty(ref _recurrenceRule, value); }
     public string Link { get => _link; set => SetProperty(ref _link, value); }
     public string AttachmentPath { get => _attachmentPath; set => SetProperty(ref _attachmentPath, value); }
-    public List<SubtaskItem> Subtasks { get; set; } = [];
+    public List<SubtaskItem> Subtasks
+    {
+        get => _subtasks;
+        set
+        {
+            _subtasks = value ?? [];
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SubtaskProgressText));
+        }
+    }
     public int EstimatedMinutes { get; set; }
     public int ActualSeconds
     {
@@ -85,6 +95,7 @@ public sealed class TaskItem : ObservableObject
         < 3600 => $"{ActualSeconds / 60} 分钟",
         _ => $"{ActualSeconds / 3600}小时 {(ActualSeconds % 3600) / 60}分"
     };
+    public string SubtaskProgressText => Subtasks.Count == 0 ? string.Empty : $"子任务 {Subtasks.Count(s => s.IsCompleted)}/{Subtasks.Count}";
 
     public TaskItem Clone() => new()
     {

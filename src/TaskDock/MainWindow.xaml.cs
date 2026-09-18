@@ -81,6 +81,7 @@ public partial class MainWindow : Window
         HistoryRangeBox.SelectedIndex = 2;
         DisplayBox.ItemsSource = Forms.Screen.AllScreens.Select((s, i) => new DisplayOption(s.DeviceName, $"显示器 {i + 1} · {s.Bounds.Width}×{s.Bounds.Height}{(s.Primary ? "（主屏）" : "")}")).ToList();
         DisplayBox.SelectedValue = string.IsNullOrWhiteSpace(_settings.Current.DisplayDeviceName) ? Forms.Screen.PrimaryScreen?.DeviceName : _settings.Current.DisplayDeviceName;
+        DockEdgeBox.SelectedIndex = _settings.Current.DockEdge switch { "Left" => 1, "Top" => 2, "Bottom" => 3, _ => 0 };
         _initializingSettings = false;
     }
 
@@ -93,23 +94,55 @@ public partial class MainWindow : Window
     {
         if (_settings.Current.IsFloating) return;
         var area = _screen.WorkingArea;
-        Top = area.Top / _dpiScale;
-        Height = area.Height / _dpiScale;
-        MaxHeight = Height;
-        var shownLeft = area.Right / _dpiScale - Width;
-        var hiddenLeft = area.Right / _dpiScale - PeekWidth;
-        var target = _isShown || _settings.Current.IsPinned ? shownLeft : hiddenLeft;
-        if (animate) BeginAnimation(LeftProperty, new DoubleAnimation(target, TimeSpan.FromMilliseconds(180)) { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } });
-        else Left = target;
+        var areaLeft = area.Left / _dpiScale;
+        var areaTop = area.Top / _dpiScale;
+        var areaWidth = area.Width / _dpiScale;
+        var areaHeight = area.Height / _dpiScale;
+        var edge = NormalizeDockEdge(_settings.Current.DockEdge);
+        var isVisible = _isShown || _settings.Current.IsPinned;
+
+        BeginAnimation(LeftProperty, null);
+        BeginAnimation(TopProperty, null);
+        if (edge is "Left" or "Right")
+        {
+            Width = Math.Min(Math.Clamp(_settings.Current.PanelWidth, 390, 800), areaWidth);
+            Height = areaHeight;
+            MaxHeight = areaHeight;
+            Top = areaTop;
+            var shownLeft = edge == "Right" ? areaLeft + areaWidth - Width : areaLeft;
+            var hiddenLeft = edge == "Right" ? areaLeft + areaWidth - PeekWidth : areaLeft - Width + PeekWidth;
+            var target = isVisible ? shownLeft : hiddenLeft;
+            if (animate) AnimateTo(LeftProperty, target);
+            else Left = target;
+            return;
+        }
+
+        Width = Math.Min(Math.Max(_settings.Current.PanelWidth, 820), areaWidth);
+        Height = Math.Min(areaHeight, Math.Max(MinHeight, Math.Min(720, areaHeight * 0.86)));
+        MaxHeight = areaHeight;
+        Left = areaLeft + (areaWidth - Width) / 2;
+        var shownTop = edge == "Top" ? areaTop : areaTop + areaHeight - Height;
+        var hiddenTop = edge == "Top" ? areaTop - Height + PeekWidth : areaTop + areaHeight - PeekWidth;
+        var targetTop = isVisible ? shownTop : hiddenTop;
+        if (animate) AnimateTo(TopProperty, targetTop);
+        else Top = targetTop;
     }
+
+    private void AnimateTo(DependencyProperty property, double target) =>
+        BeginAnimation(property, new DoubleAnimation(target, TimeSpan.FromMilliseconds(180))
+        {
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+        });
+
+    private static string NormalizeDockEdge(string? edge) => edge is "Left" or "Top" or "Bottom" ? edge : "Right";
 
     private void EdgeTimer_Tick(object? sender, EventArgs e)
     {
         if (_isShown || _settings.Current.IsPinned || _settings.Current.IsFloating) return;
         var cursor = Forms.Cursor.Position;
         var bounds = _screen.Bounds;
-        var touchesRightEdge = ScreenEdgeDetector.IsAtRightEdge(cursor.X, cursor.Y, bounds.Left, bounds.Top, bounds.Right, bounds.Bottom);
-        if (touchesRightEdge) ShowDock();
+        var touchesSelectedEdge = ScreenEdgeDetector.IsAtEdge(cursor.X, cursor.Y, bounds.Left, bounds.Top, bounds.Right, bounds.Bottom, _settings.Current.DockEdge);
+        if (touchesSelectedEdge) ShowDock();
     }
 
     public void ShowDock()
@@ -196,6 +229,8 @@ public partial class MainWindow : Window
         if (_settings.Current.IsFloating)
         {
             BeginAnimation(LeftProperty, null);
+            BeginAnimation(TopProperty, null);
+            Width = Math.Clamp(_settings.Current.PanelWidth, 390, 800);
             ShowInTaskbar = true; Topmost = false; MaxHeight = double.PositiveInfinity; Height = Math.Min(760, _screen.WorkingArea.Height / _dpiScale - 60);
             Left = _screen.WorkingArea.Left / _dpiScale + 70; Top = _screen.WorkingArea.Top / _dpiScale + 30;
         }
@@ -236,6 +271,15 @@ public partial class MainWindow : Window
     {
         if (_initializingSettings || DisplayBox.SelectedValue is not string device) return;
         _settings.Current.DisplayDeviceName = device; _settings.Save(); SelectConfiguredScreen(); PositionDock(false);
+    }
+
+    private void DockEdgeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_initializingSettings || DockEdgeBox.SelectedItem is not ComboBoxItem { Tag: string edge }) return;
+        _settings.Current.DockEdge = NormalizeDockEdge(edge);
+        _settings.Save();
+        PositionDock(false);
+        ViewModel.ToastMessage = $"已改为从{(edge == "Left" ? "左侧" : edge == "Top" ? "顶部" : edge == "Bottom" ? "底部" : "右侧")}弹出";
     }
 
     private void ThemeBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -416,7 +460,9 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (!_allowClose) { e.Cancel = true; if (_settings.Current.IsFloating) Hide(); else HideDock(); return; }
-        _settings.Current.PanelWidth = Width; _settings.Save(); _hotkey?.Dispose();
+        if (_settings.Current.IsFloating || NormalizeDockEdge(_settings.Current.DockEdge) is "Left" or "Right")
+            _settings.Current.PanelWidth = Width;
+        _settings.Save(); _hotkey?.Dispose();
         _edgeTimer.Stop();
     }
 }

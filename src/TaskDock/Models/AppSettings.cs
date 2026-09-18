@@ -12,6 +12,7 @@ public sealed class AppSettings
     public string Accent { get; set; } = "Blue";
     public string Hotkey { get; set; } = "Ctrl+Alt+T";
     public string DisplayDeviceName { get; set; } = string.Empty;
+    public string DockEdge { get; set; } = "Right";
     public double PanelWidth { get; set; } = 440;
     public bool IsFloating { get; set; }
     public DateTime? LastAutomaticBackup { get; set; }

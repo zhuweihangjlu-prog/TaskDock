@@ -37,6 +37,8 @@ public sealed class MainViewModel : ObservableObject
         SnoozeCommand = new RelayCommand(Snooze);
         ArchiveCommand = new RelayCommand(Archive);
         UnarchiveCommand = new RelayCommand(Unarchive);
+        OpenLinkCommand = new RelayCommand(OpenLink);
+        OpenAttachmentCommand = new RelayCommand(OpenAttachment);
         EditCommand = new RelayCommand(item => { if (item is TaskItem task) EditRequested?.Invoke(this, task); });
         UndoDeleteCommand = new RelayCommand(_ => UndoDelete(), _ => _lastDeleted is not null);
         Reload();
@@ -146,6 +148,8 @@ public sealed class MainViewModel : ObservableObject
     public ICommand SnoozeCommand { get; }
     public ICommand ArchiveCommand { get; }
     public ICommand UnarchiveCommand { get; }
+    public ICommand OpenLinkCommand { get; }
+    public ICommand OpenAttachmentCommand { get; }
     public ICommand EditCommand { get; }
     public ICommand UndoDeleteCommand { get; }
     public event EventHandler<TaskItem>? EditRequested;
@@ -353,6 +357,26 @@ public sealed class MainViewModel : ObservableObject
         _repository.Save(task);
         ApplyFilter();
         ShowToast("任务已移出归档");
+    }
+
+    private void OpenLink(object? parameter)
+    {
+        if (parameter is not TaskItem task) return;
+        try
+        {
+            if (!ResourceLauncher.OpenWeb(task.Link)) ShowToast("网页链接无效");
+        }
+        catch (Exception ex) { ShowToast($"无法打开链接：{ex.Message}"); }
+    }
+
+    private void OpenAttachment(object? parameter)
+    {
+        if (parameter is not TaskItem task) return;
+        try
+        {
+            if (!ResourceLauncher.OpenFile(task.AttachmentPath)) ShowToast("附件不存在或已被移动");
+        }
+        catch (Exception ex) { ShowToast($"无法打开附件：{ex.Message}"); }
     }
 
     private void ApplyFilter()

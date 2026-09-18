@@ -11,7 +11,7 @@
     <ApplicationIcon>Assets\TaskDock.ico</ApplicationIcon>
     <AssemblyName>TaskDock</AssemblyName>
     <RootNamespace>TaskDock</RootNamespace>
-    <Version>0.1.3</Version>
+    <Version>0.2.0</Version>
     <Authors>TaskDock</Authors>
     <Product>TaskDock</Product>
     <Description>轻量、本地优先的 Windows 侧边栏待办工具</Description>
